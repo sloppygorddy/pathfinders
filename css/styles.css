@@ -1,0 +1,53 @@
+
+* {
+  margin: 0;
+  
+}
+
+#canvas
+{
+	border: 2px solid black;
+	background-size: 100%;
+	display: inline-block;
+}
+
+/*#chessBoardNormal
+{
+	line-height: 1px;
+	display: inline-block;
+	background-color: white;
+	border: 1px solid black;
+	height: 80px;
+	width: 80px;
+	margin: 0;
+}*/
+
+.menu{
+	background-color: #006400;
+	color: #FFEBCD;
+	height: 50px;
+	font-weight: bold;
+	font-style: italic;
+	font-size: 40px;
+	text-align: center;
+	text-align: middle;
+} 
+
+
+.game
+{
+	background-color: lightblue;
+	color: black;
+	height: 700px;
+	font-weight: bold;
+	font-style: italic;
+}
+
+.instructions
+{
+	background-color: lightyellow;
+	color: white;
+	height: 50px;
+	font-weight: bold;
+	font-style: italic;
+}
