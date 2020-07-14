@@ -55,8 +55,8 @@ class button():
 		if len(self.text):
 			font = pg.font.SysFont('arial', 35)
 			text = font.render(self.text, 1, BLACK)
-			screen.blit(text, (self.x + (self.width / 2 - text.get_width() / 2), \
-							   self.y + (self.height / 2 - text.get_height() / 2)))
+			screen.blit(text, (self.x + (int(self.width / 2) - int(text.get_width() / 2)), \
+							   self.y + (int(self.height / 2) - int(text.get_height() / 2))))
 
 	def isOver(self, pos):
 		if self.x <= pos[0] <= self.x + self.width:
@@ -73,10 +73,11 @@ def heuristic(num1, num2, grid):
 	col1 = num1 % h
 	row2 = num2 // h
 	col2 = num2 % h
-	x = grid[row1][col1].x - grid[row2][col2].x
-	y = grid[row1][col1].y - grid[row2][col2].y
+	# x = grid[row1][col1].x - grid[row2][col2].x
+	# y = grid[row1][col1].y - grid[row2][col2].y
 
-	distance = math.sqrt(x**2 + y**2)
+	# distance = math.sqrt(x**2 + y**2)
+	distance = abs(row1-row2)*(HEIGHT + MARGIN) + abs(col1-col2)*(WIDTH + MARGIN)
 
 	return distance
 
@@ -129,6 +130,7 @@ def path(number, grid):
 
 
 def astar(start, goal, grid):
+	w, h = pg.display.get_surface().get_size()
 	wait = 1
 	if goal.number == start.number:
 		return [goal.number]
@@ -139,7 +141,7 @@ def astar(start, goal, grid):
 	visited = {}
 	route = []
 	
-	heappush(frontierinfo, [heuristic(start.number, goal.number, grid), 0, start.number, start.number])
+	heappush(frontierinfo, [heuristic(start.number, goal.number, grid), w*h, 0, start.number, start.number])
 	frontierpoint.append(start.number)
 	
 	# start looping
@@ -159,16 +161,19 @@ def astar(start, goal, grid):
 		for item in nextstep:
 			if item in visited: pass 
 			elif item == current[-1]: pass
-			elif item in frontierpoint:
-				for info in frontierinfo:
-					if info[-1] == item: 
-						if current[1]+heuristic(current[-1], item, grid) < info[1]: # then need to update the optimal cost
-							info[1] = current[1]+heuristic(current[-1], item, grid)
-							info[0] = current[1]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid)
-							info[2] = current[-1]
+			elif item in frontierpoint: pass
+				# for info in frontierinfo:
+					# if info[-1] == item: 
+						# if current[1]+heuristic(current[-1], item, grid) < info[1]: # then need to update the optimal cost
+						# 	info[1] = current[1]+heuristic(current[-1], item, grid)
+						# 	info[0] = current[1]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid)
+						# 	info[2] = current[-1]
 			else:
-				heappush(frontierinfo, [current[1]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid),\
-										current[1]+heuristic(current[-1], item, grid), current[-1], item])
+				heappush(frontierinfo, [current[2]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid),\
+										w*h-(current[2]+heuristic(current[-1], item, grid)), current[2]+heuristic(current[-1],\
+											item, grid), current[-1], item])
+				# heappush(frontierinfo, [current[1]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid),\
+				# 						current[1]+heuristic(current[-1], item, grid), current[-1], item])
 				frontierpoint.append(item)
 				new(item, grid)
 		
@@ -214,7 +219,10 @@ for row in range(len(grid)):
 pg.init()
 
 # Set the HEIGHT and WIDTH of the screen
-WINDOW_SIZE = [1200, 631]
+screen_x = 1200
+screen_y = 631
+
+WINDOW_SIZE = [screen_x, screen_y]
 win = pg.display.set_mode(WINDOW_SIZE)
 # Set the screen background
 win.fill(BLACK)
@@ -256,11 +264,11 @@ while not done:
 
 			pg.display.update()
 			pg.time.delay(50)
-			start = grid[20][5]
-			goal = grid[20][20]
+			start = grid[10][5]
+			goal = grid[20][40]
 			start.draw(BLACK, win)
 			goal.draw(BLACK, win)
-			for i in range(7,23):
+			for i in range(27):
 				grid[i][10].obs = True
 				grid[29-i][30].obs = True
 				grid[i][10].draw(BLACK, win)
