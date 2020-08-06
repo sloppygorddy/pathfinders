@@ -7,95 +7,113 @@ import sys
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-GREEN = (0, 150, 0)
-RED = (255, 0, 0)
-YELLOW = (249, 255, 51)
-LIGHTGREEN = (0, 255, 0)
+GREEN = (80, 220, 80)
+RED = (230, 70, 70)
+YELLOW = (255, 255, 50)
+PURPLE = (128, 0, 128)
+ORANGE = (255, 165, 0)
+LIGHTBLUE = (64, 224, 208)
 
 
-# This sets the WIDTH and HEIGHT of each grid location
-WIDTH = 20
-HEIGHT = 20
-
-# This sets the margin between each cell
-MARGIN = 1
+# This sets the WIDTH and HEIGHT of the grid canvas
+WIDTH = 799
+GAP = 1
+ROW = 50
+WIN = pg.display.set_mode((WIDTH, WIDTH))
+pg.display.set_caption("A* PathFinder")
 
 
 #############################################----classes and functions-----##########################################
 
-class block():
-	def __init__(self, row, column, width, height, margin):
+class Block:
+	def __init__(self, row, col, width):
 		self.color = WHITE
-		self.obs = False
-		self.x = column*(width + margin) + int(width/2) + margin
-		self.y = row*(height + margin) + int(height/2) + margin
+		self.row = row
+		self.col = col
+		self.x = col * (width + GAP)
+		self.y = row * (width + GAP)
 		self.width = width
-		self.height = height
 		self.neighbor = []
-		self.number = None
+
+	def get_pos(self):
+		return self.x, self.y
+
+	def set_start(self):
+		self.color = ORANGE
+
+	def set_goal(self):
+		self.color = LIGHTBLUE
+
+	def set_closed(self):
+		self.color = RED
+
+	def set_opened(self):
+		self.color = GREEN
+
+	def set_obs(self):
+		self.color = BLACK
+
+	def set_path(self):
+		self.color = YELLOW
+
+	def is_start(self):
+		return self.color == ORANGE
+
+	def is_goal(self):
+		return self.color == LIGHTBLUE
+
+	def is_closed(self):
+		return self.color == RED
+
+	def is_opened(self):
+		return self.color == GREEN
+
+	def is_obs(self):
+		return self.color == BLACK
+
+	def erase(self):
+		self.color = WHITE
+	
+
+	def draw(self, win):
+		pg.draw.rect(win, self.color, (self.x, self.y , self.width, self.width))
+
+	def find_neighbors(self, grid):
+		row = self.row
+		col = self.col
+		if row < ROW - 1 and not grid[row+1][col].is_obs():    # Check DOWN
+			self.neighbor.append((row+1, col))
+		if col < ROW -1 and not grid[row][col+1].is_obs():     # Check RIGHT
+			self.neighbor.append((row, col+1))
+		if row > 0 and not grid[row-1][col].is_obs():          # Check UP
+			self.neighbor.append((row-1, col))
+		if col > 0 and not grid[row][col-1].is_obs():          # Check LEFT
+			self.neighbor.append((row, col-1))
 
 
-	def draw(self, color, win):
-		pg.draw.rect(win, color, (self.x - int(self.width/2), self.y - int(self.height/2), self.width, self.height), 0)
 
-
-
-class button():
-	def __init__(self, color, x, y, width, height, text=''):
-		self.color = color
-		self.x = x
-		self.y = y
-		self.width = width
-		self.height = height
-		self.text = text
-
-	def draw(self, screen):
-		pg.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height), 0)
-
-		if len(self.text):
-			font = pg.font.SysFont('arial', 35)
-			text = font.render(self.text, 1, BLACK)
-			screen.blit(text, (self.x + (int(self.width / 2) - int(text.get_width() / 2)), \
-							   self.y + (int(self.height / 2) - int(text.get_height() / 2))))
-
-	def isOver(self, pos):
-		if self.x <= pos[0] <= self.x + self.width:
-			if self.y <= pos[1] <= self.y + self.height:
-				return True
-
-		return False
-
-
-
-def heuristic(num1, num2, grid):
-	h = len(grid[0])
-	row1 = num1 // h
-	col1 = num1 % h
-	row2 = num2 // h
-	col2 = num2 % h
-	# x = grid[row1][col1].x - grid[row2][col2].x
-	# y = grid[row1][col1].y - grid[row2][col2].y
-
-	# distance = math.sqrt(x**2 + y**2)
-	distance = abs(row1-row2)*(HEIGHT + MARGIN) + abs(col1-col2)*(WIDTH + MARGIN)
-
+def heuristic(pos1, pos2):
+	distance = abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 	return distance
 
 
-def neighbor(number, grid):
-	h = len(grid[0])
-	row = number // h
-	col = number % h
-	lis = []
-	if row > 0 and grid[row-1][col].obs == False:
-		lis.append(grid[row-1][col].number)
-	if row < (len(grid)-1) and grid[row+1][col].obs == False:
-		lis.append(grid[row+1][col].number)
-	if col > 0 and grid[row][col-1].obs == False:
-		lis.append(grid[row][col-1].number)
-	if col < (h-1) and grid[row][col+1].obs == False:
-		lis.append(grid[row][col+1].number)
-	return lis
+def make_grid():
+	grid = []
+	width = WIDTH // ROW
+	for i in range(ROW):
+		grid.append([])
+		for j in range(ROW):
+			grid[i].append(Block(i, j, WIDTH // ROW))
+	return grid
+
+
+def draw_grid(win, grid):
+	win.fill(BLACK)
+	for rows in grid:
+		for blocks in rows:
+			blocks.draw(win)
+	pg.display.update()
+
 
 def curr(number, grid):
 	h = len(grid[0])
@@ -105,199 +123,99 @@ def curr(number, grid):
 	pg.display.update()
 
 
-def new(number, grid):
-	h = len(grid[0])
-	row = number // h
-	col = number % h
-	grid[row][col].draw(GREEN, win)
-	pg.display.update()
-
-
-def old(number, grid):
-	h = len(grid[0])
-	row = number // h
-	col = number % h
-	grid[row][col].draw(RED, win)
-	pg.display.update()
-
-
-def path(number, grid):
-	h = len(grid[0])
-	row = number // h
-	col = number % h
-	grid[row][col].draw(YELLOW, win)
-	pg.display.update()
-
-
-def astar(start, goal, grid):
-	w, h = pg.display.get_surface().get_size()
-	wait = 1
-	if goal.number == start.number:
-		return [goal.number]
-
+def astar(start, goal, grid, draw):
 	# Initialize frontier heap list, visited list
 	frontierinfo = []
-	frontierpoint = []
+	frontierpoint = {}
 	visited = {}
-	route = []
+	rank = 0
 	
-	heappush(frontierinfo, [heuristic(start.number, goal.number, grid), w*h, 0, start.number, start.number])
-	frontierpoint.append(start.number)
+	heappush(frontierinfo, [heuristic(start.get_pos(), goal.get_pos()), 0, rank, start, start])
+	frontierpoint[(start.row, start.col)] = 1
 	
 	# start looping
 	while len(frontierinfo):
-		# pg.time.delay(wait)
-		if goal.number in visited: # goal in visited means shortest path is found already
-			cur = goal.number
-			route = [goal.number]
-			while cur != start.number: # this loop to back traverse the optimal path using the dictionary
-				route = [visited[cur]] + route
-				path(visited[cur], grid)
+		for event in pg.event.get():  # User did something
+			if event.type == pg.QUIT:
+				pg.quit()
+		if visited.get((goal.row, goal.col)) != None:  # goal in visited means shortest path is found already
+			cur = visited[(goal.row, goal.col)]
+			while cur != (start.row, start.col): # this loop to back traverse the optimal path using the dictionary
+				# route = [visited[cur]] + route
+				# path(visited[cur], grid)
+				grid[cur[0]][cur[1]].set_path()
 				cur = visited[cur]
+				draw()
+			start.set_start()
+			goal.set_goal()
+			draw()
 			break
-		current = heappop(frontierinfo) # pop out the one with smallest total est cost
-		curr(current[-1], grid)
-		nextstep = neighbor(current[-1], grid) # find neighbors
+		expel = heappop(frontierinfo)
+		current = expel[-1] # pop out the one with smallest total est cost
+		current.set_opened()
+		nextstep = current.neighbor # find neighbors
 		for item in nextstep:
-			if item in visited: pass 
-			elif item == current[-1]: pass
-			elif item in frontierpoint: pass
-				# for info in frontierinfo:
-					# if info[-1] == item: 
-						# if current[1]+heuristic(current[-1], item, grid) < info[1]: # then need to update the optimal cost
-						# 	info[1] = current[1]+heuristic(current[-1], item, grid)
-						# 	info[0] = current[1]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid)
-						# 	info[2] = current[-1]
+			if visited.get(item) != None: pass 
+			elif item == (current.row, current.col): pass
+			elif frontierpoint.get(item) != None: pass
 			else:
-				heappush(frontierinfo, [current[2]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid),\
-										w*h-(current[2]+heuristic(current[-1], item, grid)), current[2]+heuristic(current[-1],\
-											item, grid), current[-1], item])
-				# heappush(frontierinfo, [current[1]+heuristic(current[-1], item, grid)+heuristic(item, goal.number, grid),\
-				# 						current[1]+heuristic(current[-1], item, grid), current[-1], item])
-				frontierpoint.append(item)
-				new(item, grid)
+				rank += 1
+				heappush(frontierinfo, [expel[1]+21+heuristic(item, goal.get_pos()),
+										expel[1]+21, rank,\
+										current, grid[item[0]][item[1]]])
+				frontierpoint[item] = 1
+				grid[item[0]][item[1]].set_opened()
 		
-		frontierpoint.remove(current[-1])
-		if current[-1] != start.number and current[-1] != goal.number:
-			old(current[-1], grid)
-		visited[current[-1]] = current[-2] # store in dictionary the optimal last step
-	
-	# print("shortest path called")
-	# for item in route:
-	# 	print((item//50, item%50))
+		frontierpoint.pop((current.row, current.col))
+		if current != start and current != goal:
+			current.set_closed()
+		visited[(current.row, current.col)] = (expel[-2].row, expel[-2].col) # store in dictionary the optimal last step
 
-	# if route == []:
-	# 	print('no solution found!')
-	# else:
-	# 	return route
+		draw()
 
+##############################################----individual blocks-----##########################################
 
-def trial(num):
-	for i in range(num):
-		grid[i][i].draw(BLACK, win)
-		pg.display.update()
-		pg.time.delay(50)
+def main(win):
+	run = True
+	started = False
+	dist = (WIDTH // ROW) + GAP
+	grid = make_grid()
 
-##############################################----indivual blocks-----##########################################
+	start = None
+	goal = None
 
-grid = []
+	while run:
+		draw_grid(win, grid)
+		for event in pg.event.get():  # User did something
+			if event.type == pg.QUIT:  # If user clicked close
+				run = False  # Flag that we are done so we exit this loop
+			if started:
+				continue
+			else:
+				if pg.mouse.get_pressed()[0]:
+					pos = pg.mouse.get_pos()
+					col = (pos[0] // dist)
+					row = (pos[1] // dist)
+					block = grid[row][col]
+					if not start and block != goal:
+						start = block
+						start.set_start()
+					elif not goal and block != start:
+						goal = block
+						goal.set_goal()
+					elif block != start and block != goal:
+						block.set_obs()
+				if event.type == pg.KEYDOWN:
+					if event.key == pg.K_SPACE and start and goal: 
+						for rows in grid:
+							for blocks in rows:
+								blocks.find_neighbors(grid)
+						astar(start, goal, grid, lambda: draw_grid(win, grid))
+					if event.key == pg.K_r:
+						start = None
+						goal = None
+						grid = make_grid()
 
-for row in range(30):
-	grid.append([])
-	for col in range(50):
-		grid[row].append(0)
+	pg.quit()
 
-count = 0
-
-for row in range(len(grid)):
-	for col in range(len(grid[0])):
-		grid[row][col] = block(row, col, WIDTH, HEIGHT, MARGIN)
-		grid[row][col].number = count
-		count += 1
-
-
-pg.init()
-
-# Set the HEIGHT and WIDTH of the screen
-screen_x = 1200
-screen_y = 631
-
-WINDOW_SIZE = [screen_x, screen_y]
-win = pg.display.set_mode(WINDOW_SIZE)
-# Set the screen background
-win.fill(BLACK)
-
-# Set title of screen
-pg.display.set_caption("PathFinder")
-
-start = button((128, 255, 0), 1080, 95, 100, 80, 'Start')
-
-goal = button((255, 178, 102), 1080, 275, 100, 80, 'Goal')
-
-wall = button((160, 160, 160), 1080, 450, 100, 80, 'Wall')
-
-start.draw(win)
-goal.draw(win)
-wall.draw(win)
-
-# Loop until the user clicks the close button.
-done = False
-
-# Used to manage how fast the screen updates
-clock = pg.time.Clock()
-# -------- Main Program Loop -----------
-status = 0
-
-
-while not done:
-	for event in pg.event.get():  # User did something
-		if event.type == pg.QUIT:  # If user clicked close
-			done = True  # Flag that we are done so we exit this loop
-		else:
-			for row in range(30):
-				for column in range(50):
-					# pg.draw.rect(win, WHITE, [(MARGIN + WIDTH) * column + MARGIN, (MARGIN + HEIGHT) * row + MARGIN, WIDTH, HEIGHT])
-					if grid[row][column].obs == True:
-						grid[row][column].draw(BLACK, win)
-					else:
-						grid[row][column].draw(WHITE, win)
-
-			pg.display.update()
-			pg.time.delay(50)
-			start = grid[10][5]
-			goal = grid[20][40]
-			start.draw(BLACK, win)
-			goal.draw(BLACK, win)
-			for i in range(27):
-				grid[i][10].obs = True
-				grid[29-i][30].obs = True
-				grid[i][10].draw(BLACK, win)
-				grid[29-i][30].draw(BLACK, win)
-				pg.display.update()
-			astar(start, goal, grid)
-			pg.time.delay(30000)
-			# trial(10)
-
-
-	# clock.tick(1000)
-
-	# Go ahead and update the screen with what we've drawn.
-	pg.display.update()
-	time.sleep(0.05)
-# Be IDLE friendly. If you forget this line, the program will 'hang'
-# on exit.
-pg.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+main(WIN)
