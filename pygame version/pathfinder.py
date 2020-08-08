@@ -141,8 +141,6 @@ def astar(start, goal, grid, draw):
 		if visited.get((goal.row, goal.col)) != None:  # goal in visited means shortest path is found already
 			cur = visited[(goal.row, goal.col)]
 			while cur != (start.row, start.col): # this loop to back traverse the optimal path using the dictionary
-				# route = [visited[cur]] + route
-				# path(visited[cur], grid)
 				grid[cur[0]][cur[1]].set_path()
 				cur = visited[cur]
 				draw()
@@ -172,6 +170,7 @@ def astar(start, goal, grid, draw):
 		visited[(current.row, current.col)] = (expel[-2].row, expel[-2].col) # store in dictionary the optimal last step
 
 		draw()
+
 
 ##############################################----individual blocks-----##########################################
 
@@ -205,10 +204,24 @@ def main(win):
 						goal.set_goal()
 					elif block != start and block != goal:
 						block.set_obs()
+				if pg.key.get_pressed()[pg.K_c]: # hold down "c" key and use mouse to clean board
+					if pg.mouse.get_pressed()[0]:
+						pos = pg.mouse.get_pos()
+						col = (pos[0] // dist)
+						row = (pos[1] // dist)
+						block = grid[row][col]
+						if block == start:
+							start = None
+						if block == goal:
+							goal = None
+						block.erase()
 				if event.type == pg.KEYDOWN:
 					if event.key == pg.K_SPACE and start and goal: 
 						for rows in grid:
 							for blocks in rows:
+								if not blocks.is_obs() and not blocks.is_start() and not blocks.is_goal():
+									blocks.erase()
+								blocks.neighbor = []
 								blocks.find_neighbors(grid)
 						astar(start, goal, grid, lambda: draw_grid(win, grid))
 					if event.key == pg.K_r:
