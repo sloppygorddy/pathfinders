@@ -1,8 +1,6 @@
 from heapq import heapify, heappush, heappop
 import math
 import pygame as pg
-import time
-import sys
 
 
 BLACK = (0, 0, 0)
